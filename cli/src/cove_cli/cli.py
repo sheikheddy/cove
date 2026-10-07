@@ -164,6 +164,8 @@ def run(argv: Sequence[str] | None = None) -> int:
             return 0
 
         if args.command == "provision":
+            if args.allow_gpu_only_attestation and args.first_arg not in {"allow", "inspect"}:
+                parser.error("--allow-gpu-only-attestation only applies to 'allow' and 'inspect'")
             if args.first_arg == "serve":
                 if args.second_arg is None:
                     port = None
@@ -189,6 +191,7 @@ def run(argv: Sequence[str] | None = None) -> int:
                         args.second_arg,
                         args.third_arg,
                         cove_home=args.cove_home,
+                        allow_gpu_only_attestation=args.allow_gpu_only_attestation,
                     )
                 )
                 return 0
@@ -202,6 +205,7 @@ def run(argv: Sequence[str] | None = None) -> int:
                     inspect_and_allow(
                         args.second_arg,
                         cove_home=args.cove_home,
+                        allow_gpu_only_attestation=args.allow_gpu_only_attestation,
                     )
                 )
                 return 0
@@ -548,6 +552,14 @@ def _build_parser() -> argparse.ArgumentParser:
         "--overwrite",
         action="store_true",
         help="Overwrite an existing named artifact slot during upload",
+    )
+    provision_parser.add_argument(
+        "--allow-gpu-only-attestation",
+        action="store_true",
+        help=(
+            "With 'allow' or 'inspect': also release keys on NVIDIA GPU-only attestation, "
+            "which does not measure the workload compose (trusts the GPU host's operator)"
+        ),
     )
 
     return parser

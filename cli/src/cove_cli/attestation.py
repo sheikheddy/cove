@@ -4,6 +4,7 @@ import hashlib
 from typing import Any
 
 from cove_container_runtime.attestation import (
+    NVIDIA_GPU_CC_ATTESTATION_FORMAT,
     PHALA_DSTACK_ATTESTATION_FORMAT,
     PHALA_DSTACK_VERIFY_URL,
     verify_attestation_bundle as _verify_runtime_attestation_bundle,
