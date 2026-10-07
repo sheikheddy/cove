@@ -8,6 +8,7 @@ from .check import check_workflow, format_report
 from .compile import CompileCommandError, compile_workflow
 from .config import ConfigError
 from .deploy import DeployCommandError, PhalaDeployOptions, deploy_workflow
+from .gpu_attest import GpuAttestCommandError, attest_gpu_command, verify_gpu_bundle_command
 from .hub import HubCommandError, get_hub_object_command, inspect_hub_object_command
 from .init_command import InitCommandError, initialize_cove_home
 from .provision import (
@@ -88,6 +89,27 @@ def run(argv: Sequence[str] | None = None) -> int:
                         args.hub_path,
                         server_url=args.server_url,
                         cove_home=args.cove_home,
+                    )
+                )
+                return 0
+
+        if args.command == "attest":
+            if args.attest_command == "gpu":
+                print(
+                    attest_gpu_command(
+                        message=args.message,
+                        report_data_hex=args.report_data_hex,
+                        output=args.output,
+                        verify=not args.no_verify,
+                    )
+                )
+                return 0
+            if args.attest_command == "verify":
+                print(
+                    verify_gpu_bundle_command(
+                        args.bundle,
+                        message=args.message,
+                        report_data_hex=args.report_data_hex,
                     )
                 )
                 return 0
@@ -206,6 +228,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         CompileCommandError,
         ClientProxyCommandError,
         DeployCommandError,
+        GpuAttestCommandError,
         HubCommandError,
         InitCommandError,
         PublishCommandError,
@@ -323,6 +346,40 @@ def _build_parser() -> argparse.ArgumentParser:
     hub_inspect_parser.add_argument(
         "--server-url",
         help="CoveHub API URL. Defaults to covehub_server_url in the local Cove config.",
+    )
+
+    attest_parser = subparsers.add_parser(
+        "attest",
+        help="Collect or verify NVIDIA confidential-computing GPU attestations",
+    )
+    attest_subparsers = attest_parser.add_subparsers(dest="attest_command", required=True)
+    attest_gpu_parser = attest_subparsers.add_parser(
+        "gpu",
+        help="Collect a GPU attestation bundle on this machine and verify it with NVIDIA NRAS",
+    )
+    attest_verify_parser = attest_subparsers.add_parser(
+        "verify",
+        help="Verify a saved GPU attestation bundle with NVIDIA NRAS",
+    )
+    attest_verify_parser.add_argument("bundle", help="Path to a GPU attestation bundle JSON file")
+    for attest_subparser in (attest_gpu_parser, attest_verify_parser):
+        attest_report_data_group = attest_subparser.add_mutually_exclusive_group()
+        attest_report_data_group.add_argument(
+            "--message",
+            help="Bind the attestation to sha256 of this text",
+        )
+        attest_report_data_group.add_argument(
+            "--report-data-hex",
+            help="Bind the attestation to these raw report-data bytes (1-64 bytes, hex)",
+        )
+    attest_gpu_parser.add_argument(
+        "--output",
+        help="Where to write the bundle. Defaults to ./gpu_attestation.json.",
+    )
+    attest_gpu_parser.add_argument(
+        "--no-verify",
+        action="store_true",
+        help="Only collect evidence; skip NRAS verification",
     )
 
     client_parser = subparsers.add_parser(

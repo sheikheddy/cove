@@ -77,6 +77,7 @@ def _stub_phala_attestation(monkeypatch):
         expected_report_data: bytes,
         expected_compose_hash: str,
         expected_deployed_compose_text: str | None = None,
+        accept_gpu_only: bool = False,
     ):
         if attestation.get("report_data") != expected_report_data.hex():
             raise RuntimeErrorBase("attestation_bundle.report_data does not match expected report data")
